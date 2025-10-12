@@ -205,7 +205,7 @@ lemma UnitChoices.scaleUnit_apply_fst (u1 u2 : UnitChoices) :
 @[simp]
 lemma UnitChoices.dimScale_scaleUnit {u1 u2 u : UnitChoices} (d : Dimension) :
     u.dimScale (scaleUnit u1 u2 u) d = u1.dimScale u2 d := by
-  simp [dimScale]
+  simp [dimScale_apply]
   congr 1
   congr 1
   congr 1

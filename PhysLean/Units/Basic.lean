@@ -9,6 +9,9 @@ import PhysLean.ClassicalMechanics.Mass.MassUnit
 import PhysLean.Electromagnetism.Charge.ChargeUnit
 import PhysLean.Thermodynamics.Temperature.TemperatureUnits
 import PhysLean.Units.Dimension
+
+import Mathlib.Algebra.Group.TransferInstance
+
 /-!
 
 # Dimensions and unit
@@ -73,6 +76,8 @@ in PhysLean which is based exclusively on Reals.
 -/
 open NNReal
 
+abbrev Scaling (D : Type) [Group D] := D →* ℝ≥0ˣ
+
 /-- The choice of units. -/
 @[ext]
 structure UnitChoices where
@@ -87,12 +92,88 @@ structure UnitChoices where
   /-- The temperature unit. -/
   temperature : TemperatureUnit
 
+@[ext]
+structure UnitScaling where
+  /-- The scaling of the length unit. -/
+  length : ℝ≥0ˣ
+  /-- The scaling of the time unit. -/
+  time : ℝ≥0ˣ
+  /-- The scaling of the mass unit. -/
+  mass : ℝ≥0ˣ
+  /-- The scaling of the charge unit. -/
+  charge : ℝ≥0ˣ
+  /-- The scaling of the temperature unit. -/
+  temperature : ℝ≥0ˣ
+
+namespace UnitScaling
+
+noncomputable def scaleFactor (s : UnitScaling) (d : Dimension): ℝ :=
+  s.length ^ (d.length : ℝ) *
+  s.time ^ (d.time : ℝ) *
+  s.mass ^ (d.mass : ℝ) *
+  s.charge ^ (d.charge : ℝ) *
+  s.temperature ^ (d.temperature : ℝ)
+
+@[simp]
+lemma scaleFactor_pos (s : UnitScaling) (d : Dimension) :
+    0 < scaleFactor s d := by
+  simp [scaleFactor, Real.rpow_pos_of_pos]
+
+@[simp]
+lemma scaleFactor_trans (s: UnitScaling) (d1 d2 : Dimension) :
+    scaleFactor s (d1 * d2) = scaleFactor s d1 * scaleFactor s d2 := by
+  simp only [scaleFactor, Dimension.length_mul, Rat.cast_add, Dimension.time_mul,
+    Dimension.mass_mul, Dimension.charge_mul, Dimension.temperature_mul]
+  repeat rw [Real.rpow_add]
+  ring
+  all_goals
+    simp
+
+noncomputable def mk_unit (x : ℝ) (hx : 0 < x) : ℝ≥0ˣ :=
+  Units.mk0 (⟨x, le_of_lt hx⟩ : ℝ≥0) (pos_iff_ne_zero.mp hx)
+
+noncomputable def toScaling (s : UnitScaling) : Scaling Dimension where
+  toFun d := mk_unit (scaleFactor s d) (scaleFactor_pos s d)
+  map_one' := by
+    simp [mk_unit, scaleFactor]
+  map_mul' d1 d2 := by
+    simp only [mk_unit, scaleFactor_trans]
+    exact Units.val_inj.mp rfl
+
+noncomputable def ofScaling (s : Scaling Dimension) : UnitScaling where
+  length := Units.mk0 (s Dimension.L𝓭) (by simp)
+  time := Units.mk0 (s Dimension.T𝓭) (by simp)
+  mass := Units.mk0 (s Dimension.M𝓭) (by simp)
+  charge := Units.mk0 (s Dimension.C𝓭) (by simp)
+  temperature := Units.mk0 (s Dimension.Θ𝓭) (by simp)
+
+end UnitScaling
+
 namespace UnitChoices
+
+def scale (u : UnitChoices) (s : Scaling Dimension) : UnitChoices where
+  length := u.length.scale (s Dimension.L𝓭)
+  time := u.time.scale (s Dimension.T𝓭)
+  mass := u.mass.scale (s Dimension.M𝓭)
+  charge := u.charge.scale (s Dimension.C𝓭)
+  temperature := u.temperature.scale (s Dimension.Θ𝓭)
+
+noncomputable def divide (u1 u2 : UnitChoices) : UnitScaling where
+  length := Units.mk0 (u1.length / u2.length) (by simp)
+  time := Units.mk0 (u1.time / u2.time) (by simp)
+  mass := Units.mk0 (u1.mass / u2.mass) (by simp)
+  charge := Units.mk0 (u1.charge / u2.charge) (by simp)
+  temperature := Units.mk0 (u1.temperature / u2.temperature) (by simp)
+
+noncomputable def dimScale (u1 u2 : UnitChoices) : Dimension →* ℝ≥0 where
+  toFun d :=  UnitScaling.toScaling (divide u1 u2) d
+  map_one' := by simp
+  map_mul' d1 d2 := by simp
 
 /-- Given two choices of units `u1` and `u2` and a dimension `d`, the
   element of `ℝ≥0` corresponding to the scaling (by definition) of a quantity of dimension `d`
   when changing from units `u1` to `u2`. -/
-noncomputable def dimScale (u1 u2 : UnitChoices) :Dimension →* ℝ≥0 where
+noncomputable def dimScale'''' (u1 u2 : UnitChoices) : Dimension →* ℝ≥0 where
   toFun d :=
     (u1.length / u2.length) ^ (d.length : ℝ) *
     (u1.time / u2.time) ^ (d.time : ℝ) *
@@ -120,7 +201,7 @@ lemma dimScale_apply (u1 u2 : UnitChoices) (d : Dimension) :
 @[simp]
 lemma dimScale_self (u : UnitChoices) (d : Dimension) :
     dimScale u u d = 1 := by
-  simp [dimScale]
+  simp [dimScale_apply]
 
 @[simp]
 lemma dimScale_one (u1 u2 : UnitChoices) :
@@ -129,7 +210,7 @@ lemma dimScale_one (u1 u2 : UnitChoices) :
 
 lemma dimScale_transitive (u1 u2 u3 : UnitChoices) (d : Dimension) :
     dimScale u1 u2 d * dimScale u2 u3 d = dimScale u1 u3 d := by
-  simp [dimScale]
+  simp [dimScale_apply]
   trans ((u1.length / u2.length) ^ (d.length : ℝ) * (u2.length / u3.length) ^ (d.length : ℝ)) *
     ((u1.time / u2.time) ^ (d.time : ℝ) * (u2.time / u3.time) ^ (d.time : ℝ)) *
     ((u1.mass / u2.mass) ^ (d.mass : ℝ) * (u2.mass / u3.mass) ^ (d.mass : ℝ)) *
@@ -241,7 +322,9 @@ lemma dimScale_SI_SIPrimed (d : Dimension) :
       (5⁻¹ : ℝ≥0) ^ (d.mass : ℝ) *
       (7⁻¹ : ℝ≥0) ^ (d.charge : ℝ) *
       (11⁻¹ : ℝ≥0) ^ (d.temperature : ℝ) := by
-  simp [dimScale, SI, SIPrimed]
+  simp [
+    dimScale, SI, SIPrimed, dimScale, divide, UnitScaling.toScaling, UnitScaling.scaleFactor,
+    UnitScaling.mk_unit]
   rfl
 
 @[simp]
@@ -252,7 +335,9 @@ lemma dimScale_SIPrimed_SI (d : Dimension) :
       (5 : ℝ≥0) ^ (d.mass : ℝ) *
       (7 : ℝ≥0) ^ (d.charge : ℝ) *
       (11 : ℝ≥0) ^ (d.temperature : ℝ) := by
-  simp [dimScale, SI, SIPrimed]
+  simp [
+    dimScale, SI, SIPrimed, divide, UnitScaling.toScaling, UnitScaling.scaleFactor,
+    UnitScaling.mk_unit]
   rfl
 
 end UnitChoices

@@ -28,7 +28,7 @@ noncomputable def meters400 : Dimensionful (WithDim L𝓭 ℝ) := toDimensionful
 /-- Changing that length to miles.
   400 meters is very almost a quarter of a mile. -/
 example : meters400 {SI with length := LengthUnit.miles} = ⟨1/4 - 73/50292⟩ := by
-  simp [meters400, toDimensionful_apply_apply, dimScale, LengthUnit.miles]
+  simp [meters400, toDimensionful_apply_apply, dimScale_apply, LengthUnit.miles]
   ext
   simp only [WithDim.smul_val]
   trans 1609.344⁻¹ * 400
@@ -186,7 +186,7 @@ We now explore the consequences of `energyMass_isDimensionallyCorrect` and how w
 lemma example1_energyMass : EnergyMass ⟨2⟩ ⟨2 * 299792458 ^ 2⟩ SI := by
   simp only [EnergyMass, mul_eq_mul_left_iff, OfNat.ofNat_ne_zero,
     or_false]
-  simp [speedOfLight, toDimensionful_apply_apply, dimScale, SI]
+  simp [speedOfLight, toDimensionful_apply_apply, SI]
 
 /- The lemma `energyMass_isDimensionallyCorrect` allows us to scale the units
   of `example1_energyMass`, that is - we proved it in one set of units, but we get the result
