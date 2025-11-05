@@ -124,13 +124,12 @@ instance : Mul UnitScaling where
 instance : One UnitScaling where
   one := ⟨1, 1, 1, 1, 1⟩
 
-lemma tmp (a b c : ℝ≥0ˣ) : a * (b * c) = (a * b) * c := by exact Eq.symm (mul_assoc a b c)
-
-instance : Group UnitScaling where
+instance : CommGroup UnitScaling where
   mul_assoc s1 s2 s3 := by
     ext1 <;> simp <;> try rw [mul_assoc]
   one_mul s := by ext1 <;> simp <;> rfl
   mul_one s := by ext1 <;> simp <;> rfl
+  mul_comm s1 s2 := by ext1 <;> simp <;> rw [mul_comm]
   inv s := ⟨s.length⁻¹, s.time⁻¹, s.mass⁻¹, s.charge⁻¹, s.temperature⁻¹⟩
   inv_mul_cancel s := by ext1 <;> simp <;> rfl
 
@@ -288,6 +287,25 @@ lemma div_mul_div_cancel (u1 u2 u3: UnitChoices) :
     (u1 / u2) * (u2 / u3) = u1 / u3 := by
   apply smul_right_cancel u3
   rw [mul_smul, div_smul, div_smul, div_smul]
+
+@[simp]
+lemma div_mul_div_cancel' (u1 u2 u3: UnitChoices) :
+    (u2 / u1) * (u3 / u2) = u3 / u1 := by
+  rw [mul_comm]
+  simp
+
+@[simp]
+lemma inv_div_eq_div_rev (u1 u2: UnitChoices) :
+    (u1 / u2)⁻¹ = (u2 / u1) := by
+  rw [inv_eq_of_mul_eq_one_left]
+  simp
+
+@[simp]
+lemma div_smul_eq_div_mul_inv (u1 u2: UnitChoices) (s : UnitScaling) :
+    u1 / s • u2 = u1 / u2 * s⁻¹ := by
+  apply smul_right_cancel (s • u2)
+  conv_rhs => rw [← mul_smul]
+  simp
 
 /-- Given two choices of units `u1` and `u2` and a dimension `d`, the
   element of `ℝ≥0` corresponding to the scaling (by definition) of a quantity of dimension `d`

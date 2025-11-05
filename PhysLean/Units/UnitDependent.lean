@@ -70,6 +70,14 @@ class ContinuousLinearUnitDependent (M : Type) [AddCommMonoid M] [Module ℝ M]
     [TopologicalSpace M] extends LinearUnitDependent M where
   scaleUnit_cont : ∀ u1 u2, Continuous (scaleUnit u1 u2)
 
+class ScaleDependent (M : Type) extends MulAction UnitScaling M where
+
+noncomputable instance [ScaleDependent M] : UnitDependent M where
+  scaleUnit u1 u2 m := (u2 / u1) • m
+  scaleUnit_trans u1 u2 u3 m := by simp [← mul_smul]
+  scaleUnit_trans' u1 u2 u3 m:= by simp [← mul_smul]
+  scaleUnit_id := by simp
+
 /-!
 
 ## Basic properties of scaleUnit
@@ -173,58 +181,17 @@ We construct instance of the `UnitDependent`, `LinearUnitDependent` and
 
 open UnitDependent
 
-noncomputable instance : UnitDependent UnitChoices where
-  scaleUnit u1 u2 u := ⟨
-      LengthUnit.scale (u2.length/u1.length) u.length (by simp),
-      TimeUnit.scale (u2.time/u1.time) u.time (by simp),
-      MassUnit.scale (u2.mass/u1.mass) u.mass (by simp),
-      ChargeUnit.scale (u2.charge/u1.charge) u.charge (by simp),
-      TemperatureUnit.scale (u2.temperature/u1.temperature) u.temperature (by simp)⟩
-  scaleUnit_trans u1 u2 u3 u := by
-    congr 1 <;> simp
-  scaleUnit_trans' u1 u2 u3 u := by
-    congr 1
-    · simp [LengthUnit.div_eq_val]
-    · simp [TimeUnit.div_eq_val]
-    · simp [MassUnit.div_eq_val]
-    · simp [ChargeUnit.div_eq_val]
-    · simp [TemperatureUnit.div_eq_val]
-  scaleUnit_id u1 u := by simp
+instance : ScaleDependent UnitChoices where
 
 @[simp]
 lemma UnitChoices.scaleUnit_apply_fst (u1 u2 : UnitChoices) :
     (scaleUnit u1 u2 u1) = u2 := by
   simp [scaleUnit]
-  apply UnitChoices.ext
-  · simp [LengthUnit.scale, LengthUnit.div_eq_val]
-  · simp [TimeUnit.scale, TimeUnit.div_eq_val]
-  · simp [MassUnit.scale, MassUnit.div_eq_val]
-  · simp [ChargeUnit.scale, ChargeUnit.div_eq_val]
-  · simp [TemperatureUnit.scale, TemperatureUnit.div_eq_val]
 
 @[simp]
 lemma UnitChoices.dimScale_scaleUnit {u1 u2 u : UnitChoices} (d : Dimension) :
     u.dimScale (scaleUnit u1 u2 u) d = u1.dimScale u2 d := by
-  simp [dimScale_apply]
-  congr 1
-  congr 1
-  congr 1
-  congr 1
-  · congr 1
-    simp [scaleUnit]
-    simp [LengthUnit.div_eq_val]
-  · congr 1
-    simp [scaleUnit]
-    simp [TimeUnit.div_eq_val]
-  · congr 1
-    simp [scaleUnit]
-    simp [MassUnit.div_eq_val]
-  · congr 1
-    simp [scaleUnit]
-    simp [ChargeUnit.div_eq_val]
-  · congr 1
-    simp [scaleUnit]
-    simp [TemperatureUnit.div_eq_val]
+  simp [dimScale, UnitScaling.toScaling, scaleUnit]
 
 lemma Dimensionful.of_scaleUnit {M : Type} [CarriesDimension M] {u1 u2 u : UnitChoices}
     (c : Dimensionful M) :
