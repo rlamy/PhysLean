@@ -60,7 +60,7 @@ lemma oneMeterPerSecond_in_SI : oneMeterPerSecond SI = ⟨1⟩ := by
 
 @[simp]
 lemma oneMilePerHour_in_SI : oneMilePerHour SI = ⟨0.44704⟩ := by
-  simp only [oneMilePerHour, dimScale_apply, LengthUnit.miles, TimeUnit.hours,
+  simp only [oneMilePerHour, dimScale_def, LengthUnit.miles, TimeUnit.hours,
     toDimensionful_apply_apply]
   ext
   simp [NNReal.coe_ofScientific]
@@ -69,7 +69,7 @@ lemma oneMilePerHour_in_SI : oneMilePerHour SI = ⟨0.44704⟩ := by
 @[simp]
 lemma oneKilometerPerHour_in_SI :
     oneKilometerPerHour SI = ⟨5/18⟩ := by
-  simp only [oneKilometerPerHour, dimScale_apply,
+  simp only [oneKilometerPerHour, dimScale_def,
     LengthUnit.kilometers, TimeUnit.hours, toDimensionful_apply_apply]
   ext
   simp
@@ -77,7 +77,7 @@ lemma oneKilometerPerHour_in_SI :
 
 @[simp]
 lemma oneKnot_in_SI : oneKnot SI = ⟨463/900⟩ := by
-  simp only [oneKnot, dimScale_apply, LengthUnit.nauticalMiles, TimeUnit.hours,
+  simp only [oneKnot, dimScale_def, LengthUnit.nauticalMiles, TimeUnit.hours,
     toDimensionful_apply_apply]
   ext
   simp

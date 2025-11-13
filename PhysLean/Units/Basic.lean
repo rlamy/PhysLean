@@ -205,6 +205,21 @@ lemma toScaling_mul (s1 s2 : UnitScaling) :
 lemma toScaling_mul_apply (s1 s2 : UnitScaling) (d : Dimension) :
     toScaling (s1 * s2) d = toScaling s1 d * toScaling s2 d := by simp
 
+@[simp]
+lemma toScaling_one : toScaling 1 = 1 := by
+  ext d
+  simp [toScaling, scaleFactor, mk_unit, one_def]
+
+@[simp]
+lemma toScaling_mul_inv_cancel (s : UnitScaling) :
+  toScaling s * toScaling s⁻¹ = 1 := by
+  simp only [← toScaling_mul, mul_inv_cancel, toScaling_one]
+
+lemma toScaling_inv (s : UnitScaling) :
+  toScaling s⁻¹ = (toScaling s)⁻¹ := by
+    have h := @inv_eq_of_mul_eq_one_right _ _ s.toScaling _ (toScaling_mul_inv_cancel s)
+    simp [h]
+
 end UnitScaling
 
 namespace UnitChoices
@@ -315,7 +330,7 @@ noncomputable def dimScale (u1 u2 : UnitChoices) : Dimension →* ℝ≥0 where
   map_one' := by simp
   map_mul' d1 d2 := by simp
 
-lemma dimScale_apply (u1 u2 : UnitChoices) (d : Dimension) :
+lemma dimScale_def (u1 u2 : UnitChoices) (d : Dimension) :
     dimScale u1 u2 d =
       (u1.length / u2.length) ^ (d.length : ℝ) *
       (u1.time / u2.time) ^ (d.time : ℝ) *
@@ -323,22 +338,20 @@ lemma dimScale_apply (u1 u2 : UnitChoices) (d : Dimension) :
       (u1.charge / u2.charge) ^ (d.charge : ℝ) *
       (u1.temperature / u2.temperature) ^ (d.temperature : ℝ) := rfl
 
-lemma dimScale_apply' (u1 u2 : UnitChoices) :
+lemma dimScale_apply (u1 u2 : UnitChoices) :
     dimScale u1 u2 d = UnitScaling.toScaling (u1 / u2) d := rfl
 
 @[simp]
 lemma dimScale_self (u : UnitChoices) (d : Dimension) :
-    dimScale u u d = 1 := by
-  simp [dimScale_apply]
+    dimScale u u d = 1 := by simp [dimScale_apply]
 
 @[simp]
 lemma dimScale_one (u1 u2 : UnitChoices) :
-    dimScale u1 u2 1 = 1 := by
-  simp [dimScale_apply]
+    dimScale u1 u2 1 = 1 := by simp
 
 lemma dimScale_transitive (u1 u2 u3 : UnitChoices) (d : Dimension) :
     dimScale u1 u2 d * dimScale u2 u3 d = dimScale u1 u3 d := by
-  simp [dimScale_apply']
+  simp only [dimScale_apply]
   norm_cast
   rw [← UnitScaling.toScaling_mul_apply]
   simp
@@ -351,29 +364,24 @@ lemma dimScale_mul_symm (u1 u2 : UnitChoices) (d : Dimension) :
 @[simp]
 lemma dimScale_coe_mul_symm (u1 u2 : UnitChoices) (d : Dimension) :
     (toReal (dimScale u1 u2 d)) * (toReal (dimScale u2 u1 d)) = 1 := by
-  trans toReal (dimScale u1 u2 d * dimScale u2 u1 d)
-  · rw [NNReal.coe_mul]
+  norm_cast
   simp
 
 @[simp]
 lemma dimScale_neq_zero (u1 u2 : UnitChoices) (d : Dimension) :
     dimScale u1 u2 d ≠ 0 := by
-  simp [dimScale]
+  simp [dimScale_apply]
 
 lemma dimScale_symm (u1 u2 : UnitChoices) (d : Dimension) :
     dimScale u1 u2 d = (dimScale u2 u1 d)⁻¹ := by
-  simp only [dimScale_apply, mul_inv]
-  congr
-  · rw [LengthUnit.div_symm, inv_rpow]
-  · rw [TimeUnit.div_symm, inv_rpow]
-  · rw [MassUnit.div_symm, inv_rpow]
-  · rw [ChargeUnit.div_symm, inv_rpow]
-  · rw [TemperatureUnit.div_symm, inv_rpow]
+  rw [dimScale_apply, ← inv_div_eq_div_rev, UnitScaling.toScaling_inv]
+  simp only [MonoidHom.inv_apply, Units.val_inv_eq_inv_val, inv_inj]
+  rfl
 
 lemma dimScale_of_inv_eq_swap (u1 u2 : UnitChoices) (d : Dimension) :
     dimScale u1 u2 d⁻¹ = dimScale u2 u1 d := by
   simp only [map_inv]
-  conv_rhs => rw[dimScale_symm]
+  conv_rhs => rw [dimScale_symm]
 
 @[simp]
 lemma smul_dimScale_injective {M : Type} [MulAction ℝ≥0 M] (u1 u2 : UnitChoices) (d : Dimension)
@@ -441,7 +449,7 @@ lemma dimScale_SI_SIPrimed (d : Dimension) :
       (5⁻¹ : ℝ≥0) ^ (d.mass : ℝ) *
       (7⁻¹ : ℝ≥0) ^ (d.charge : ℝ) *
       (11⁻¹ : ℝ≥0) ^ (d.temperature : ℝ) := by
-  simp [dimScale_apply, SI, SIPrimed]
+  simp [dimScale_def, SI, SIPrimed]
   rfl
 
 @[simp]
@@ -452,7 +460,7 @@ lemma dimScale_SIPrimed_SI (d : Dimension) :
       (5 : ℝ≥0) ^ (d.mass : ℝ) *
       (7 : ℝ≥0) ^ (d.charge : ℝ) *
       (11 : ℝ≥0) ^ (d.temperature : ℝ) := by
-  simp [dimScale_apply, SI, SIPrimed]
+  simp [dimScale_def, SI, SIPrimed]
   rfl
 
 end UnitChoices

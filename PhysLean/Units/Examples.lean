@@ -28,7 +28,7 @@ noncomputable def meters400 : Dimensionful (WithDim L𝓭 ℝ) := toDimensionful
 /-- Changing that length to miles.
   400 meters is very almost a quarter of a mile. -/
 example : meters400 {SI with length := LengthUnit.miles} = ⟨1/4 - 73/50292⟩ := by
-  simp [meters400, toDimensionful_apply_apply, dimScale_apply, LengthUnit.miles]
+  simp [meters400, toDimensionful_apply_apply, dimScale_def, LengthUnit.miles]
   ext
   simp only [WithDim.smul_val]
   trans 1609.344⁻¹ * 400
