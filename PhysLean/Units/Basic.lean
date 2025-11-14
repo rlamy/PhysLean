@@ -461,15 +461,30 @@ and a type
 
 -/
 
+section HasDimension
+open Torsor UnitScaling
+
 /-- A quantity of type `M` which depends on a choice of units `UnitChoices` is said to be
   of dimension `d` if it scales by `UnitChoices.dimScale u1 u2 d` under a change in units. -/
 def HasDimension {M : Type} [CarriesDimension M] (f : UnitChoices → M) : Prop :=
-  ∀ u1 u2 : UnitChoices, f u2 = UnitChoices.dimScale u1 u2 (dim M) • f u1
+  ∀ (u : UnitChoices) (s : UnitScaling), f (s • u) = toScaling s⁻¹ (dim M) • f u
 
 lemma hasDimension_iff {M : Type} [CarriesDimension M] (f : UnitChoices → M) :
     HasDimension f ↔ ∀ u1 u2 : UnitChoices, f u2 =
     UnitChoices.dimScale u1 u2 (dim M) • f u1 := by
-  rfl
+  unfold HasDimension UnitChoices.dimScale
+  simp only [MonoidHom.coe_mk, OneHom.coe_mk]
+  constructor
+  · intro h u1 u2
+    conv_lhs => rw [← div_smul u2 u1]
+    conv_rhs => rw [← inv_div_eq_div_rev]
+    exact h u1 (u2 / u1)
+  · intro h u s
+    rw [h u (s • u)]
+    simp only [div_smul_eq_div_mul_inv, Torsor.div_self, one_mul]
+    norm_cast
+
+end HasDimension
 
 /-- The subtype of functions `UnitChoices → M`, for which `M` carries a dimension,
   which `HasDimension`. -/
@@ -510,17 +525,20 @@ noncomputable def CarriesDimension.toDimensionful {M : Type} [CarriesDimension M
     (u : UnitChoices) :
     M ≃ Dimensionful M where
   toFun m := {
-    val := fun u1 => (u.dimScale u1 (dim M)) • m
-    property := fun u1 u2 => by
+    val := fun u1 => (UnitScaling.toScaling (u / u1) (dim M)) • m
+    property := fun u1 s => by
       simp [smul_smul]
-      rw [mul_comm, UnitChoices.dimScale_transitive]}
+      rw [mul_comm]}
   invFun f := f.1 u
   left_inv m := by
     simp
   right_inv f := by
-    simp only
     ext u1
-    simpa using (f.2 u u1).symm
+    conv_rhs =>
+      arg 2
+      rw [← UnitChoices.div_smul u1 u]
+    rw [f.2]
+    simp
 
 lemma CarriesDimension.toDimensionful_apply_apply
     {M : Type} [CarriesDimension M] (u1 u2 : UnitChoices) (m : M) :

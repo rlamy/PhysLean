@@ -197,21 +197,21 @@ lemma Dimensionful.of_scaleUnit {M : Type} [CarriesDimension M] {u1 u2 u : UnitC
     (c : Dimensionful M) :
     c.1 (scaleUnit u1 u2 u) =
     u1.dimScale u2 (dim M) • c.1 (u) := by
-  rw [c.2 u (scaleUnit u1 u2 u)]
-  congr 1
-  simp
+  simp [scaleUnit, UnitChoices.dimScale, c.2 u _]
+  norm_cast
 
 noncomputable instance {M1 : Type} [CarriesDimension M1] : MulUnitDependent M1 where
   scaleUnit u1 u2 m := (toDimensionful u1 m).1 u2
   scaleUnit_trans u1 u2 u3 m := by
-    simp [toDimensionful]
+    simp only [toDimensionful_apply_apply]
     rw [smul_smul, mul_comm, UnitChoices.dimScale_transitive]
   scaleUnit_trans' u1 u2 u3 m := by
-    simp [toDimensionful, smul_smul, UnitChoices.dimScale_transitive]
+    simp [toDimensionful_apply_apply, smul_smul]
+    simp [UnitChoices.dimScale_transitive]
   scaleUnit_id u m := by
-    simp [toDimensionful, UnitChoices.dimScale_self]
-  scaleUnit_mul u1 u2 r m := by
     simp [toDimensionful]
+  scaleUnit_mul u1 u2 r m := by
+    simp [toDimensionful_apply_apply]
     exact smul_comm (u1.dimScale u2 (dim M1)) r m
 
 lemma HasDim.scaleUnit_apply {M : Type} [CarriesDimension M]
@@ -490,11 +490,13 @@ lemma DMul.hMul_scaleUnit {M1 M2 M3 : Type} [CarriesDimension M1] [CarriesDimens
     (scaleUnit u1 u2 m1) * (scaleUnit u1 u2 m2) =
     scaleUnit u1 u2 (m1 * m2) := by
   simp [scaleUnit, toDimensionful]
-  have h1 := DMul.mul_dim (M3 := M3) (toDimensionful u1 m1) (toDimensionful u1 m2) u2 u1
-  simp [toDimensionful_apply_apply] at h1
+  have h1 := DMul.mul_dim (M3 := M3) (toDimensionful u1 m1) (toDimensionful u1 m2) u2 (u1 / u2)
+  simp [toDimensionful_apply_apply, UnitChoices.dimScale] at h1
   conv_rhs =>
     rw [h1, smul_smul]
     simp
+  simp [← UnitScaling.toScaling_mul_apply]
+  norm_cast
 
 /-!
 

@@ -45,6 +45,9 @@ instance (d : Dimension) (M : Type) [MulAction ℝ≥0 M] : MulAction ℝ≥0 (W
 lemma smul_val {d : Dimension} {M : Type} [MulAction ℝ≥0 M] (a : ℝ≥0) (m : WithDim d M) :
     (a • m).val = a • m.val := rfl
 
+lemma smul_val' {d : Dimension} {M : Type} [MulAction ℝ≥0 M] (a : ℝ≥0ˣ) (m : WithDim d M) :
+    (a • m).val = a • m.val := rfl
+
 instance {d1 d2 : Dimension} :
     HMul (WithDim d1 ℝ) (WithDim d2 ℝ) (WithDim (d1 * d2) ℝ) where
   hMul m1 m2 := ⟨m1.val * m2.val⟩
@@ -55,14 +58,12 @@ lemma withDim_hMul_val {d1 d2 : Dimension} (m1 : WithDim d1 ℝ) (m2 : WithDim d
 instance {d1 d2 : Dimension} :
     DMul (WithDim d1 ℝ) (WithDim d2 ℝ) (WithDim (d1 * d2) ℝ) where
   mul_dim m1 m2 := by
-    intro u1 u2
+    intro u s
     ext
-    simp only [withDim_hMul_val, dim_apply, map_mul, smul_val]
-    rw [m1.2 u1, m2.2 u1]
-    simp only [dim_apply, smul_val, Algebra.mul_smul_comm, Algebra.smul_mul_assoc]
-    rw [smul_smul]
-    congr 1
-    rw [mul_comm]
+    dsimp only
+    rw [m1.2 u, m2.2 u]
+    simp only [dim_apply, withDim_hMul_val, smul_val', map_mul]
+    rw [smul_mul_assoc, mul_smul_comm, smul_smul]
 
 open UnitDependent
 
