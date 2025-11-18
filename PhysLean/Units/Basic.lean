@@ -488,7 +488,7 @@ end HasDimension
 
 /-- The subtype of functions `UnitChoices → M`, for which `M` carries a dimension,
   which `HasDimension`. -/
-def Dimensionful (M : Type) [CarriesDimension M] := Subtype (HasDimension (M := M))
+def Dimensionful (M : Type) [CarriesDimension M] := {f : UnitChoices → M // HasDimension f}
 
 instance {M : Type} [CarriesDimension M] : CoeFun (Dimensionful M) (fun _ => UnitChoices → M) where
   coe := Subtype.val
@@ -501,9 +501,9 @@ lemma Dimensionful.ext {M : Type} [CarriesDimension M] (f1 f2 : Dimensionful M)
   simp_all
 
 instance {M : Type} [CarriesDimension M] : MulAction ℝ≥0 (Dimensionful M) where
-  smul a f := ⟨fun u => a • f.1 u, fun u1 u2 => by
+  smul a f := ⟨fun u => a • f.1 u, fun u s => by
     simp only
-    rw [f.2 u1 u2]
+    rw [f.2 u s]
     rw [smul_comm]⟩
   one_smul f := by
     ext u
