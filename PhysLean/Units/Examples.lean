@@ -114,7 +114,8 @@ lemma energyMassWithDimNot_not_isDimensionallyCorrect :
     changing from `SI` to `SIPrimed` with values of `E`, `m` and `c` all equal to `1`. -/
   use SI, SIPrimed, ⟨1⟩, ⟨1⟩, ⟨1⟩
   unfold EnergyMassWithDimNot
-  simp [WithDim.scaleUnit_val, M𝓭, NNReal.smul_def]
+  simp [WithDim.scaleUnit_val, SIPrimed, M𝓭, UnitScaling.toScaling, UnitScaling.scaleFactor,
+    UnitScaling.mk_unit, primeScaling, NNReal.smul_def]
   norm_num
 
 /-!

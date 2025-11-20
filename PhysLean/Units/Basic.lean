@@ -174,7 +174,7 @@ lemma scaleFactor_trans' (s1 s2 : UnitScaling) (d : Dimension) :
     field_simp
   all_goals simp
 
-noncomputable def mk_unit (x : ℝ) (hx : 0 < x) : ℝ≥0ˣ :=
+noncomputable def mk_unit (x : ℝ) (hx : 0 < x := by simp) : ℝ≥0ˣ :=
   Units.mk0 (⟨x, le_of_lt hx⟩ : ℝ≥0) (pos_iff_ne_zero.mp hx)
 
 noncomputable def toScaling (s : UnitScaling) : Scaling Dimension where
@@ -220,6 +220,10 @@ lemma toScaling_inv (s : UnitScaling) :
   toScaling s⁻¹ = (toScaling s)⁻¹ := by
     have h := @inv_eq_of_mul_eq_one_right _ _ s.toScaling _ (toScaling_mul_inv_cancel s)
     simp [h]
+
+lemma toScaling_apply_inv (s : UnitScaling) (d : Dimension) :
+    (toScaling s d)⁻¹ = toScaling s⁻¹ d := by
+  rw [← MonoidHom.inv_apply, toScaling_inv]
 
 end UnitScaling
 
@@ -279,6 +283,29 @@ lemma smul_div (s : UnitScaling) (u : UnitChoices) :
 noncomputable instance : Torsor UnitScaling UnitChoices where
   div_smul := div_smul
   smul_div := smul_div
+
+end UnitChoices
+namespace UnitScaling
+
+@[simp]
+lemma toScaling_div_apply_inv (u1 u2 : UnitChoices) (d : Dimension) :
+    (toScaling (u1 / u2) d)⁻¹ = toScaling (u2 / u1) d := by
+  simp [toScaling_apply_inv]
+
+@[simp]
+lemma toScaling_div_mul_div_cancel (u1 u2 u3: UnitChoices) (d : Dimension) :
+    toScaling (u1 / u2) d * toScaling (u2 / u3) d = toScaling (u1 / u3) d := by
+  simp [← toScaling_mul_apply]
+
+@[simp]
+lemma toScaling_div_mul_div_cancel_outer (u1 u2 u3: UnitChoices) (d : Dimension) :
+    toScaling (u2 / u1) d * toScaling (u3 / u2) d = toScaling (u3 / u1) d := by
+  rw [mul_comm]
+  simp
+
+end UnitScaling
+
+namespace UnitChoices
 
 /-- Given two choices of units `u1` and `u2` and a dimension `d`, the
   element of `ℝ≥0` corresponding to the scaling (by definition) of a quantity of dimension `d`
@@ -389,36 +416,36 @@ lemma SI_charge : SI.charge = ChargeUnit.coulombs := rfl
 @[simp]
 lemma SI_temperature : SI.temperature = TemperatureUnit.kelvin := rfl
 
+open UnitScaling
+
+noncomputable def primeScaling : UnitScaling :=
+  ⟨mk_unit 2, mk_unit 3, mk_unit 5, mk_unit 7, mk_unit 11⟩
+
 /-- A `UnitChoices` which is related to `SI` by a prime scaling of each
   of the underlying units. This is useful in proving that a result is not
   dimensionally correct. -/
-noncomputable def SIPrimed : UnitChoices where
-  length := LengthUnit.scale 2 LengthUnit.meters
-  time := TimeUnit.scale 3 TimeUnit.seconds
-  mass := MassUnit.scale 5 MassUnit.kilograms
-  charge := ChargeUnit.scale 7 ChargeUnit.coulombs
-  temperature := TemperatureUnit.scale 11 TemperatureUnit.kelvin
+noncomputable def SIPrimed : UnitChoices := primeScaling • SI
 
 @[simp]
-lemma dimScale_SI_SIPrimed (d : Dimension) :
-    dimScale SI SIPrimed d =
+lemma toScaling_SI_SIPrimed (d : Dimension) :
+    toScaling (SI / SIPrimed) d =
       (2⁻¹ : ℝ≥0) ^ (d.length : ℝ) *
       (3⁻¹ : ℝ≥0) ^ (d.time : ℝ) *
       (5⁻¹ : ℝ≥0) ^ (d.mass : ℝ) *
       (7⁻¹ : ℝ≥0) ^ (d.charge : ℝ) *
       (11⁻¹ : ℝ≥0) ^ (d.temperature : ℝ) := by
-  simp [dimScale_def, SI, SIPrimed]
+  simp [SIPrimed]
   rfl
 
 @[simp]
-lemma dimScale_SIPrimed_SI (d : Dimension) :
-    dimScale SIPrimed SI d =
+lemma toScaling_SIPrimed_SI (d : Dimension) :
+    toScaling (SIPrimed / SI) d =
       (2 : ℝ≥0) ^ (d.length : ℝ) *
       (3 : ℝ≥0) ^ (d.time : ℝ) *
       (5 : ℝ≥0) ^ (d.mass : ℝ) *
       (7 : ℝ≥0) ^ (d.charge : ℝ) *
       (11 : ℝ≥0) ^ (d.temperature : ℝ) := by
-  simp [dimScale_def, SI, SIPrimed]
+  simp [SIPrimed]
   rfl
 
 end UnitChoices

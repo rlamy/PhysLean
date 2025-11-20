@@ -95,7 +95,7 @@ lemma scaleUnit_val_eq_scaleUnit_val_of_dim_eq {d1 d2 : Dimension} {M : Type} [M
 
 lemma scaleUnit_val {d : Dimension} (M : Type) [MulAction ℝ≥0 M]
     (u1 u2 : UnitChoices) (m1 : WithDim d M) :
-    (scaleUnit u1 u2 m1).val = u1.dimScale u2 d • m1.val := rfl
+    (scaleUnit u1 u2 m1).val = (u1 / u2).toScaling d • m1.val := rfl
 
 /-!
 

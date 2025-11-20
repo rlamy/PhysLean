@@ -216,8 +216,7 @@ noncomputable instance {M1 : Type} [CarriesDimension M1] : MulUnitDependent M1 w
 
 lemma HasDim.scaleUnit_apply {M : Type} [CarriesDimension M]
     (u1 u2 : UnitChoices) (m : M) :
-    scaleUnit u1 u2 m = (u1.dimScale u2 (dim M)) • m := by
-  simp [scaleUnit, toDimensionful_apply_apply]
+    scaleUnit u1 u2 m = (u1 / u2).toScaling (dim M) • m := rfl
 
 noncomputable instance {M : Type} [AddCommMonoid M] [Module ℝ M] [HasDim M] :
     LinearUnitDependent M where
@@ -495,7 +494,6 @@ lemma DMul.hMul_scaleUnit {M1 M2 M3 : Type} [CarriesDimension M1] [CarriesDimens
   conv_rhs =>
     rw [h1, smul_smul]
     simp
-  simp [← UnitScaling.toScaling_mul_apply]
   norm_cast
 
 /-!

@@ -21,7 +21,7 @@ in which the derivative is taken.
 
 -/
 
-open UnitDependent CarriesDimension NNReal
+open UnitDependent CarriesDimension NNReal UnitScaling
 
 variable {M1 M2 : Type} [NormedAddCommGroup M1] [NormedSpace ℝ M1]
     [ContinuousConstSMul ℝ M1] [HasDim M1]
@@ -32,7 +32,7 @@ variable {M1 M2 : Type} [NormedAddCommGroup M1] [NormedSpace ℝ M1]
 lemma fderiv_apply_scaleUnit (u1 u2 : UnitChoices) (x dm : M1)
     (f : M1 → M2) (hf : IsDimensionallyCorrect f) (f_diff : Differentiable ℝ f) :
     fderiv ℝ f (scaleUnit u2 u1 x) dm =
-    u2.dimScale u1 (dim M2) • u1.dimScale u2 (dim M1) • fderiv ℝ f x dm := by
+    toScaling (u2 / u1) (dim M2) • toScaling (u1 / u2) (dim M1) • fderiv ℝ f x dm := by
   conv_lhs => rw [← hf u2 u1]
   change (fderiv ℝ ((u2.dimScale u1 (dim M2)).1 • fun mx => f
       ((u1.dimScale u2 (dim M1)).1 • mx)) ((u2.dimScale u1 (dim M1)).1 • x)) dm = _
@@ -49,7 +49,7 @@ lemma fderiv_isDimensionallyCorrect (f : M1 → M2) (hf : IsDimensionallyCorrect
   intro u1 u2 m
   ext m'
   simp only [ContinuousLinearUnitDependent.scaleUnit_apply_fun]
-  rw [fderiv_apply_scaleUnit u1 u2 m (scaleUnit u2 u1 m') f hf f_diff]
+  rw [fderiv_apply_scaleUnit u1 u2 m _ f hf f_diff]
   simp [HasDim.scaleUnit_apply, smul_smul]
 
 /-- The expression `fderiv ℝ f x dm = v.1` for a fixed `dm` and for
@@ -63,5 +63,4 @@ lemma fderiv_dimension_const_direction (dm : M1) (f : M1 → M2) (hf : IsDimensi
     IsDimensionallyCorrect (fun x (v : WithDim (dim M2 * (dim M1)⁻¹) M2) =>
       fderiv ℝ f x dm = v.1) := by
   simp [isDimensionallyCorrect_fun_iff, funext_iff, WithDim.scaleUnit_val,
-    fderiv_apply_scaleUnit _ _ _ dm f hf f_diff,
-    ← smul_smul, ← UnitChoices.dimScale_symm]
+    fderiv_apply_scaleUnit _ _ _ dm f hf f_diff, ← smul_smul]
