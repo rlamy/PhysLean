@@ -201,18 +201,14 @@ lemma Dimensionful.of_scaleUnit {M : Type} [CarriesDimension M] {u1 u2 u : UnitC
   norm_cast
 
 noncomputable instance {M1 : Type} [CarriesDimension M1] : MulUnitDependent M1 where
-  scaleUnit u1 u2 m := (toDimensionful u1 m).1 u2
+  scaleUnit u1 u2 m := (u1 / u2).toScaling (dim M1) • m
   scaleUnit_trans u1 u2 u3 m := by
-    simp only [toDimensionful_apply_apply]
-    rw [smul_smul, mul_comm, UnitChoices.dimScale_transitive]
+    simp [smul_smul, mul_comm]
   scaleUnit_trans' u1 u2 u3 m := by
-    simp [toDimensionful_apply_apply, smul_smul]
-    simp [UnitChoices.dimScale_transitive]
-  scaleUnit_id u m := by
-    simp [toDimensionful]
+    simp [smul_smul]
+  scaleUnit_id u m := by simp
   scaleUnit_mul u1 u2 r m := by
-    simp [toDimensionful_apply_apply]
-    exact smul_comm (u1.dimScale u2 (dim M1)) r m
+    exact smul_comm ((u1 / u2).toScaling (dim M1)) r m
 
 lemma HasDim.scaleUnit_apply {M : Type} [CarriesDimension M]
     (u1 u2 : UnitChoices) (m : M) :
@@ -220,16 +216,10 @@ lemma HasDim.scaleUnit_apply {M : Type} [CarriesDimension M]
 
 noncomputable instance {M : Type} [AddCommMonoid M] [Module ℝ M] [HasDim M] :
     LinearUnitDependent M where
-  scaleUnit_add u1 u2 m1 m2 := by
-    change (toDimensionful u1 (m1 + m2)).1 u2 = _
-    rw [toDimensionful_apply_apply]
-    simp
-    rfl
+  scaleUnit_add u1 u2 m1 m2 := by simp [scaleUnit]
   scaleUnit_smul u1 u2 r m := by
-    change (toDimensionful u1 (r • m)).1 u2 = _
-    rw [toDimensionful_apply_apply]
+    simp [scaleUnit]
     rw [smul_comm]
-    rfl
 
 noncomputable instance {M : Type} [AddCommMonoid M] [Module ℝ M]
     [HasDim M] [TopologicalSpace M]
@@ -488,7 +478,7 @@ lemma DMul.hMul_scaleUnit {M1 M2 M3 : Type} [CarriesDimension M1] [CarriesDimens
     [DMul M1 M2 M3] (m1 : M1) (m2 : M2) (u1 u2 : UnitChoices) :
     (scaleUnit u1 u2 m1) * (scaleUnit u1 u2 m2) =
     scaleUnit u1 u2 (m1 * m2) := by
-  simp [scaleUnit, toDimensionful]
+  simp [scaleUnit]
   have h1 := DMul.mul_dim (M3 := M3) (toDimensionful u1 m1) (toDimensionful u1 m2) u2 (u1 / u2)
   simp [toDimensionful_apply_apply, UnitChoices.dimScale] at h1
   conv_rhs =>
