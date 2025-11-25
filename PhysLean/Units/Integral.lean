@@ -78,30 +78,29 @@ lemma integral_isDimensionallyCorrect (d : Dimension) :
     original integral in `u2` units i.e. `∫ x, f x ∂μ`. -/
     _ = scaleUnit u1 u2 (∫ x, (scaleUnit u2 u1 f) x ∂(scaleUnit u2 u1 μ)) := by
       simp [instUnitDependentTwoSided]
-    /- Since we have assumed `μ` has dimension `d`, `(scaleUnit u2 μ u1)`
-      is equal to `(u2.dimScale u1 d) • μ` -/
-    _ = scaleUnit u1 u2 (u2.dimScale u1 d • ∫ (x : M), scaleUnit u2 u1 f x ∂ μ) := by
-      rw [hμ, integral_smul_nnreal_measure]
-    /- Since we assumed `f` has dimension `CarriesDimension.d G * d⁻¹`, `(scaleUnit u2 f u1)`
-      is equal to `u2.dimScale u1 (CarriesDimension.d G * d⁻¹) • f`. -/
-    _ = scaleUnit u1 u2 (u2.dimScale u1 d •
-      u2.dimScale u1 (dim G * d⁻¹) • ∫ (x : M), f x ∂ μ) := by
+    /- Since we have assumed `μ` has dimension `d`, `(scaleUnit u2 u1 μ)`
+      is equal to `((u2/u1).toScaling d) • μ` -/
+    _ = scaleUnit u1 u2 ((u2/u1).toScaling d • ∫ (x : M), scaleUnit u2 u1 f x ∂ μ) := by
+      congr
+      rw [hμ]
+      apply integral_smul_nnreal_measure
+    /- Since we assumed `f` has dimension `dim G * d⁻¹`, `(scaleUnit u2 u1 f)`
+      is equal to `u2.dimScale u1 (dim G * d⁻¹) • f`. -/
+    _ = scaleUnit u1 u2 ((u2/u1).toScaling d •
+      (u2 / u1).toScaling (dim G * d⁻¹) • ∫ (x : M), f x ∂ μ) := by
       rw [hf]
       congr
       erw [MeasureTheory.integral_smul]
       rfl
     /- What remains is a simple cancellation of the dimensional scales. -/
-    _ = (u1.dimScale u2 (dim G)) • ((u2.dimScale u1 d) •
-        u2.dimScale u1 (dim G * d⁻¹) • ∫ (x : M), f x ∂ μ) := by
+    _ = ((u1/u2).toScaling (dim G)) • (((u2/u1).toScaling d) •
+        (u2/u1).toScaling (dim G * d⁻¹) • ∫ (x : M), f x ∂ μ) := by
       rfl
-    _ = (u1.dimScale u2 (dim G) * (u2.dimScale u1 d) *
-        u2.dimScale u1 (dim G * d⁻¹)) • ∫ (x : M), f x ∂ μ := by
+    _ = ∫ (x : M), f x ∂ μ := by
       simp [smul_smul]
-      ring_nf
-    _ = ((u1.dimScale u2 (dim G) * u2.dimScale u1 (dim G))
-        * (u2.dimScale u1 d * u1.dimScale u2 d)) • ∫ (x : M), f x ∂ μ := by
-      congr 1
-      conv_lhs => simp only [map_mul]
-      rw [UnitChoices.dimScale_of_inv_eq_swap]
-      ring
-    _ = ∫ (x : M), f x ∂ μ := by simp
+      conv =>
+        lhs
+        arg 1
+        arg 2
+        rw [mul_comm]
+      simp [mul_assoc]

@@ -495,7 +495,7 @@ lemma DMul.hMul_scaleUnit {M1 M2 M3 : Type} [CarriesDimension M1] [CarriesDimens
 /-- Given a type `M` that depends on units, e.g. the function type `M1 → M2` between two types
   carrying a dimension, the subtype of `M` which scales according to the dimension `d`. -/
 def DimSet (M : Type) [MulAction ℝ≥0 M] [MulUnitDependent M] (d : Dimension) : Set M :=
-  {m : M | ∀ u1 u2, scaleUnit u1 u2 m = (UnitChoices.dimScale u1 u2 d) • m}
+  {m : M | ∀ u1 u2, scaleUnit u1 u2 m = ((u1/ u2).toScaling d) • m}
 
 instance (M : Type) [MulAction ℝ≥0 M] [MulUnitDependent M] (d : Dimension) :
     MulAction ℝ≥0 (DimSet M d) where
@@ -523,4 +523,4 @@ lemma scaleUnit_dimSet_val {M : Type} [MulAction ℝ≥0 M] [MulUnitDependent M]
   rfl
 
 lemma DimSet.mem_iff {M : Type} [MulAction ℝ≥0 M] [MulUnitDependent M] (d : Dimension) (m : M) :
-    m ∈ DimSet M d ↔ ∀ u1 u2, scaleUnit u1 u2 m = (UnitChoices.dimScale u1 u2 d) • m := by rfl
+    m ∈ DimSet M d ↔ ∀ u1 u2, scaleUnit u1 u2 m = ((u1 / u2).toScaling d) • m := by rfl
