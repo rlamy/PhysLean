@@ -524,3 +524,132 @@ lemma scaleUnit_dimSet_val {M : Type} [MulAction ℝ≥0 M] [MulUnitDependent M]
 
 lemma DimSet.mem_iff {M : Type} [MulAction ℝ≥0 M] [MulUnitDependent M] (d : Dimension) (m : M) :
     m ∈ DimSet M d ↔ ∀ u1 u2, scaleUnit u1 u2 m = ((u1 / u2).toScaling d) • m := by rfl
+
+/-!
+
+## Quantities
+
+-/
+
+section Quantity
+
+open UnitScaling
+
+class Quantity Q V [MulAction ℝ≥0ˣ V] extends HasDim Q where
+  inUnits : Q → UnitChoices → V
+  inUnits_scaling : ∀ (q : Q) (u1 u2 : UnitChoices),
+    inUnits q u2 = (u1 / u2).toScaling (dim Q) • inUnits q u1
+  inUnits_inj : ∀ u, Function.Injective (inUnits · u)
+
+def HasContravariantScaling [MulAction ℝ≥0 M] (d : Dimension) (f : UnitChoices → M) :=
+  ∀ u1 u2 : UnitChoices, f u2 = toScaling (u1 / u2) d • f u1
+
+abbrev Magnitude Q := Quantity Q ℝ≥0ˣ
+
+structure QuantityExpr (M : Type) where
+  units : UnitChoices
+  dimension : Dimension
+  val : M
+
+namespace QuantityExpr
+
+variable [MulAction ℝ≥0ˣ M]
+
+noncomputable def inUnits (q : QuantityExpr M) (u : UnitChoices) : M :=
+  toScaling (q.units / u) q.dimension • q.val
+
+@[simp]
+lemma inUnits_self (q : QuantityExpr M) : q.inUnits q.units = q.val := by
+  unfold inUnits
+  simp
+
+noncomputable def toUnits (q: QuantityExpr M) (u : UnitChoices) : QuantityExpr M where
+  units := u
+  dimension := q.dimension
+  val := q.inUnits u
+
+instance : Setoid (QuantityExpr M) where
+  r q1 q2 :=
+    q1.dimension = q2.dimension ∧ toScaling (q1.units / q2.units) q1.dimension • q1.val = q2.val
+  iseqv := {
+    refl := by simp
+    symm := by
+      intro q1 q2 ⟨hdim, hval⟩
+      rw [← hval, hdim]
+      simp [smul_smul]
+    trans := by
+      intro q1 q2 q3 ⟨hdim12, hval12⟩ ⟨hdim23, hval23⟩
+      simp [hdim12, hdim23, ← hval23, ← hval12, smul_smul]
+  }
+
+lemma equiv_iff (q1 q2 : QuantityExpr M) : q1 ≈ q2 ↔
+    q1.dimension = q2.dimension ∧ ∀ u, q1.inUnits u = q2.inUnits u where
+  mp h := ⟨h.left, by
+    intro u
+    have h2 : q1.inUnits q2.units = q2.val := h.right
+    unfold inUnits at *
+    rw [← UnitScaling.toScaling_div_mul_div_cancel q1.units q2.units u _]
+    rw [mul_comm, ← smul_smul, h2, h.left]⟩
+  mpr h := ⟨h.left, by
+    have h2 := h.right
+    unfold inUnits at h2
+    simp [h2 q2.units]⟩
+
+end QuantityExpr
+
+abbrev QtySub (d : Dimension) (M : Type) := {q : QuantityExpr M // q.dimension = d}
+
+namespace QtySub
+
+variable [MulAction ℝ≥0ˣ M]
+
+noncomputable def inUnits (q : QtySub d M) (u : UnitChoices) : M :=
+  QuantityExpr.inUnits q u
+
+lemma equiv_coe (q1 q2 : QtySub d M) : q1 ≈ q2 → q1.val ≈ q2.val := id
+
+end QtySub
+
+def Qty (d : Dimension) (M : Type) [MulAction ℝ≥0ˣ M] :=
+  Quotient (inferInstanceAs (Setoid (QtySub d M)))
+
+namespace Qty
+
+variable [MulAction ℝ≥0ˣ M]
+
+instance : HasDim (Qty d M) where d := d
+
+@[simp]
+lemma dim_apply : dim (Qty d M) = d := rfl
+
+noncomputable def inUnits (q : Qty d M) (u : UnitChoices) : M :=
+  Quotient.liftOn q (QtySub.inUnits · u) (by
+    change ∀ (q1 q2 : QtySub d M), q1 ≈ q2 → q1.inUnits u = q2.inUnits u
+    simp only [Subtype.forall, QtySub.inUnits]
+    intro q1 q1_dim q2 q2_dim heq
+    apply QtySub.equiv_coe at heq
+    dsimp at heq
+    rw [QuantityExpr.equiv_iff] at heq
+    exact heq.right u)
+
+@[ext]
+lemma ext (u : UnitChoices) (q1 q2 : Qty d M)
+    (h : q1.inUnits u = q2.inUnits u) :
+    q1 = q2 :=
+  Quotient.inductionOn₂ q1 q2 (by
+    intro _q1 _q2
+    apply Quotient.sound
+    apply Subtype.equiv_iff.mpr
+    sorry)
+
+lemma inUnits_left_inj (u: UnitChoices) :
+    Function.Injective (fun q : Qty d M ↦ q.inUnits u) := ext u
+
+noncomputable instance : Quantity (Qty d M) M where
+  inUnits := inUnits
+  inUnits_scaling := sorry
+  inUnits_inj := inUnits_left_inj
+
+end Qty
+
+end Quantity  -- section
