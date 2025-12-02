@@ -622,6 +622,9 @@ instance : HasDim (Qty d M) where d := d
 @[simp]
 lemma dim_apply : dim (Qty d M) = d := rfl
 
+def mk (val : M) (u : UnitChoices) : Qty d M :=
+  ⟦⟨⟨u, d, val⟩, rfl⟩⟧
+
 noncomputable def inUnits (q : Qty d M) (u : UnitChoices) : M :=
   Quotient.liftOn q (QtySub.inUnits · u) (by
     change ∀ (q1 q2 : QtySub d M), q1 ≈ q2 → q1.inUnits u = q2.inUnits u
@@ -632,15 +635,27 @@ noncomputable def inUnits (q : Qty d M) (u : UnitChoices) : M :=
     rw [QuantityExpr.equiv_iff] at heq
     exact heq.right u)
 
+lemma inUnits_mk (val : M) (u1 u2 : UnitChoices) :
+  (Qty.mk val u1 : Qty d M).inUnits u2 = toScaling (u1 / u2) d • val := rfl
+
+lemma x (q : Qty d M) (u : UnitChoices) : Qty.mk (q.inUnits u) u = q := sorry
+
 @[ext]
 lemma ext (u : UnitChoices) (q1 q2 : Qty d M)
     (h : q1.inUnits u = q2.inUnits u) :
     q1 = q2 :=
   Quotient.inductionOn₂ q1 q2 (by
-    intro _q1 _q2
+    intro ⟨⟨u1, d1, m1⟩, h1⟩ ⟨⟨u2, d2, m2⟩, h2⟩
     apply Quotient.sound
     apply Subtype.equiv_iff.mpr
-    sorry)
+    dsimp only
+    rw [QuantityExpr.equiv_iff]
+    dsimp only at *
+    constructor
+    · simp [h1, ← h2]
+    simp [QuantityExpr.inUnits]
+    sorry
+    )
 
 lemma inUnits_left_inj (u: UnitChoices) :
     Function.Injective (fun q : Qty d M ↦ q.inUnits u) := ext u
