@@ -169,6 +169,7 @@ lemma ContinuousLinearUnitDependent.scaleUnitContLinearEquiv_symm_apply
     (u1 u2 : UnitChoices) (m : M) :
     (ContinuousLinearUnitDependent.scaleUnitContLinearEquiv u1 u2).symm m =
       scaleUnit u2 u1 m := rfl
+
 /-!
 
 ### Instances of the type classes
@@ -459,6 +460,7 @@ lemma isDimensionallyCorrect_fun_right {M1 M2 : Type} [UnitDependent M2]
   · intro h u1 u2
     funext m
     exact h u1 u2 m
+
 /-!
 
 ## Some type classes to help track dimensions
@@ -638,33 +640,42 @@ noncomputable def inUnits (q : Qty d M) (u : UnitChoices) : M :=
 lemma inUnits_mk (val : M) (u1 u2 : UnitChoices) :
   (Qty.mk val u1 : Qty d M).inUnits u2 = toScaling (u1 / u2) d • val := rfl
 
-lemma x (q : Qty d M) (u : UnitChoices) : Qty.mk (q.inUnits u) u = q := sorry
+lemma x (q : Qty d M) (u : UnitChoices) : Qty.mk (q.inUnits u) u = q := by
+  -- By definition of `inUnits`, we know that `q.inUnits u` is the value of `q` in units `u`.
+  have h_inUnits : q = ⟦⟨⟨u, d, q.inUnits u⟩, rfl⟩⟧ := by
+    obtain ⟨q', hq'⟩ : ∃ q' : QtySub d M, q = ⟦q'⟧ := by
+      exact Quot.inductionOn q fun q' => ⟨ q', rfl ⟩;
+    subst hq'
+    obtain ⟨val, property⟩ := q'
+    subst property
+    refine' Quotient.sound _;
+    constructor <;> aesop
+  exact h_inUnits.symm
 
 @[ext]
-lemma ext (u : UnitChoices) (q1 q2 : Qty d M)
-    (h : q1.inUnits u = q2.inUnits u) :
-    q1 = q2 :=
-  Quotient.inductionOn₂ q1 q2 (by
-    intro ⟨⟨u1, d1, m1⟩, h1⟩ ⟨⟨u2, d2, m2⟩, h2⟩
-    apply Quotient.sound
-    apply Subtype.equiv_iff.mpr
-    dsimp only
-    rw [QuantityExpr.equiv_iff]
-    dsimp only at *
-    constructor
-    · simp [h1, ← h2]
-    simp [QuantityExpr.inUnits]
-    sorry
-    )
+lemma ext (u : UnitChoices) (q1 q2 : Qty d M) (h : q1.inUnits u = q2.inUnits u) : q1 = q2 := by
+  rw [← q1.x, ← q2.x, h]
 
 lemma inUnits_left_inj (u: UnitChoices) :
     Function.Injective (fun q : Qty d M ↦ q.inUnits u) := ext u
 
 noncomputable instance : Quantity (Qty d M) M where
   inUnits := inUnits
-  inUnits_scaling := sorry
+  inUnits_scaling := by
+    intro q u1 u2
+    -- By definition of `inUnits`, we know that `q = Qty.mk (q.inUnits u) u`.
+    obtain ⟨q_val, u, hq⟩ : ∃ q_val u, q = Qty.mk q_val u := by
+      rcases q with ⟨q, rfl⟩
+      unfold Qty.mk
+      apply Exists.intro
+      · apply Exists.intro
+        · rfl
+    rw [hq];
+    rw [Qty.inUnits_mk, Qty.inUnits_mk]
+    rw [← MulAction.mul_smul]
+    simp
   inUnits_inj := inUnits_left_inj
 
 end Qty
 
-end Quantity  -- section
+end Quantity
