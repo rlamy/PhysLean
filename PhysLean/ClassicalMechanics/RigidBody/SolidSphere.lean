@@ -92,7 +92,7 @@ lemma solidSphere_centerOfMass {d : ℕ} (m R : ℝ≥0) : (solidSphere d.succ m
   rw [← integral_neg_eq_self]
   norm_num
 
-/-- The moment of inertia tensor of a solid sphere through its center of mass is
+/- The moment of inertia tensor of a solid sphere through its center of mass is
   `2/5 m R^2 * I`. -/
 noncomputable section AristotleLemmas
 
