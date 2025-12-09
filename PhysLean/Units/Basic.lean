@@ -9,6 +9,7 @@ import PhysLean.ClassicalMechanics.Mass.MassUnit
 import PhysLean.Electromagnetism.Charge.ChargeUnit
 import PhysLean.Thermodynamics.Temperature.TemperatureUnits
 import PhysLean.Units.Dimension
+import PhysLean.Mathematics.Torsor
 
 import Mathlib.Algebra.Group.TransferInstance
 
@@ -259,9 +260,6 @@ lemma div_apply (u1 u2 : UnitChoices) :
       Units.mk0 (u1.temperature / u2.temperature) (by simp)⟩ :=
   rfl
 
-lemma div_apply_length (u1 u2 : UnitChoices) :
-    (u1 / u2).length = (u1.length / u2.length : ℝ≥0) := rfl
-
 @[simp]
 lemma div_smul (u1 u2 : UnitChoices) : (u1 / u2) • u2 = u1 := by
   ext <;> simp [HDiv.hDiv, divide, HSMul.hSMul, SMul.smul, scale, Div.div, DivInvMonoid.div',
@@ -278,49 +276,9 @@ lemma smul_div (s : UnitScaling) (u : UnitChoices) :
       ChargeUnit.div_eq_val, TemperatureUnit.div_eq_val]
     rfl
 
-lemma smul_right_cancel (u : UnitChoices) (s1 s2 : UnitScaling)
-    (h : s1 • u = s2 • u) : s1 = s2 := by
-  rw [← smul_div s1 u, h, smul_div s2 u]
-
-@[simp]
-lemma smul_right_cancel_iff (u : UnitChoices) (s1 s2 : UnitScaling) :
-    s1 • u = s2 • u ↔ s1 = s2 :=
-  ⟨smul_right_cancel u s1 s2, fun h ↦ h ▸ rfl⟩
-
-@[simp]
-lemma smul_div_assoc (s : UnitScaling) (u1 u2 : UnitChoices) :
-    (s • u1) / u2 = s * (u1 / u2) := by
-  apply smul_right_cancel u2
-  rw [div_smul, mul_smul, div_smul]
-
-@[simp]
-lemma div_self (u : UnitChoices) : u / u = (1 : UnitScaling) := by
-  rw [← one_mul (u / u), ← smul_div_assoc, smul_div]
-
-@[simp]
-lemma div_mul_div_cancel (u1 u2 u3: UnitChoices) :
-    (u1 / u2) * (u2 / u3) = u1 / u3 := by
-  apply smul_right_cancel u3
-  rw [mul_smul, div_smul, div_smul, div_smul]
-
-@[simp]
-lemma div_mul_div_cancel' (u1 u2 u3: UnitChoices) :
-    (u2 / u1) * (u3 / u2) = u3 / u1 := by
-  rw [mul_comm]
-  simp
-
-@[simp]
-lemma inv_div_eq_div_rev (u1 u2: UnitChoices) :
-    (u1 / u2)⁻¹ = (u2 / u1) := by
-  rw [inv_eq_of_mul_eq_one_left]
-  simp
-
-@[simp]
-lemma div_smul_eq_div_mul_inv (u1 u2: UnitChoices) (s : UnitScaling) :
-    u1 / s • u2 = u1 / u2 * s⁻¹ := by
-  apply smul_right_cancel (s • u2)
-  conv_rhs => rw [← mul_smul]
-  simp
+noncomputable instance : Torsor UnitScaling UnitChoices where
+  div_smul := div_smul
+  smul_div := smul_div
 
 /-- Given two choices of units `u1` and `u2` and a dimension `d`, the
   element of `ℝ≥0` corresponding to the scaling (by definition) of a quantity of dimension `d`
@@ -374,7 +332,7 @@ lemma dimScale_neq_zero (u1 u2 : UnitChoices) (d : Dimension) :
 
 lemma dimScale_symm (u1 u2 : UnitChoices) (d : Dimension) :
     dimScale u1 u2 d = (dimScale u2 u1 d)⁻¹ := by
-  rw [dimScale_apply, ← inv_div_eq_div_rev, UnitScaling.toScaling_inv]
+  rw [dimScale_apply, ← Torsor.inv_div_eq_div_rev, UnitScaling.toScaling_inv]
   simp only [MonoidHom.inv_apply, Units.val_inv_eq_inv_val, inv_inj]
   rfl
 
@@ -386,7 +344,7 @@ lemma dimScale_of_inv_eq_swap (u1 u2 : UnitChoices) (d : Dimension) :
 @[simp]
 lemma smul_dimScale_injective {M : Type} [MulAction ℝ≥0 M] (u1 u2 : UnitChoices) (d : Dimension)
     (m1 m2 : M) :
-    (u1.dimScale u2 d) • m1 = (u1.dimScale u2 d) • m2 ↔ m1 = m2:= by
+    (u1.dimScale u2 d) • m1 = (u1.dimScale u2 d) • m2 ↔ m1 = m2 := by
   refine IsUnit.smul_left_cancel ?_
   refine isUnit_iff_exists_inv.mpr ?_
   use u1.dimScale u2 d⁻¹
