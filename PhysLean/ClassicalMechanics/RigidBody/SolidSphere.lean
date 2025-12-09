@@ -157,7 +157,7 @@ lemma integral_closedBall_coord_sq_eq {d : ℕ} (R : ℝ) (i j : Fin d) :
           -- Define the permutation σ that swaps i and j.
           set σ : Equiv.Perm (Fin d) := Equiv.swap i j;
           refine' ⟨ _, _, _, _ ⟩;
-          exact?;
+          exact LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ σ
           · ext k ; by_cases hk : k = j <;> aesop;
             rw [ Equiv.swap_apply_def ] at a ; aesop;
           · ext k ; aesop;
@@ -206,8 +206,9 @@ lemma integral_closedBall_norm_sq_three (R : ℝ) (hR : 0 ≤ R) :
     ∫ x in Metric.closedBall (0 : Space 3) R, ‖x‖^2 = (4/5) * Real.pi * R^5 := by
       have := @MeasureTheory.integral_fun_norm_addHaar;
       specialize @this ( EuclideanSpace ℝ ( Fin 3 ) ) _ _ _ ℝ _ _ _;
-      specialize this ( MeasureTheory.MeasureSpace.volume ) ( fun r => if r ≤ R then r ^ 2 else 0 ) ; norm_num at this;
-      convert this using 1;
+      specialize this ( MeasureTheory.MeasureSpace.volume ) ( fun r => if r ≤ R then r ^ 2 else 0 )
+      norm_num at this
+      convert this using 1
       · rw [ ← MeasureTheory.integral_indicator ] <;> norm_num [ Set.indicator ];
         exact measurableSet_closedBall;
       · rw [ show ( MeasureTheory.MeasureSpace.volume.real ( Metric.ball ( 0 : EuclideanSpace ℝ ( Fin 3 ) ) 1 ) ) = ( 4 / 3 ) * Real.pi by
@@ -216,7 +217,7 @@ lemma integral_closedBall_norm_sq_three (R : ℝ) (hR : 0 ≤ R) :
         -- Let's simplify the integral.
         have h_integral : ∫ y in Set.Ioi (0 : ℝ), (if y ≤ R then y ^ 4 else 0) = ∫ y in Set.Ioc (0 : ℝ) R, y ^ 4 := by
           rw [ ← MeasureTheory.integral_indicator, ← MeasureTheory.integral_indicator ] <;> norm_num [ Set.indicator ];
-          simpa only [ ← ite_and ];
+          simp only [ ← ite_and ]
         rw [ h_integral, ← intervalIntegral.integral_of_le ] <;> norm_num <;> linarith
 
 open MeasureTheory Manifold RigidBody
@@ -237,21 +238,38 @@ lemma integral_closedBall_coord_sq_eq_div_three (R : ℝ) (i : Fin 3) :
           apply sq_nonneg;
         rw [ funext h_norm_sq, MeasureTheory.integral_finset_sum ];
         exact fun i _ => ContinuousOn.integrableOn_compact ( ProperSpace.isCompact_closedBall _ _ ) ( by exact Continuous.continuousOn ( by exact Continuous.pow ( continuous_apply i ) _ ) );
-      have := integral_closedBall_coord_sq_eq R i 0; ( have := integral_closedBall_coord_sq_eq R i 1; ( have := integral_closedBall_coord_sq_eq R i 2; ( norm_num [ Fin.sum_univ_three ] at *; linarith!; ) ) )
+      have := integral_closedBall_coord_sq_eq R i 0
+      have := integral_closedBall_coord_sq_eq R i 1
+      have := integral_closedBall_coord_sq_eq R i 2
+      norm_num [ Fin.sum_univ_three ] at *
+      linarith!
 
 end AristotleLemmas
 
-@[sorryful]
 lemma solidSphere_inertiaTensor (m R : ℝ≥0) (hr : R ≠ 0) :
     (solidSphere 3 m R).inertiaTensor = (2/5 * m.1 * R.1^2) • (1 : Matrix _ _ _) := by
-  unfold RigidBody.inertiaTensor; aesop;
-  ext i j; simp +decide [ RigidBody.solidSphere ] ; ring_nf; aesop;
+  unfold RigidBody.inertiaTensor
+  simp only [ite_mul, one_mul, zero_mul, val_eq_coe]
+  ext i j
+  simp [RigidBody.solidSphere]
+  ring_nf
+  simp_all only [ne_eq]
+  by_cases h : i = j
   · -- Substitute the known integrals into the expression.
-    have h_integrals : ∫ x in Metric.closedBall (0 : Space 3) R, ∑ j : Fin 3, x j ^ 2 = (4 / 5) * Real.pi * R ^ 5 ∧ ∫ x in Metric.closedBall (0 : Space 3) R, x i ^ 2 = (1 / 3) * (4 / 5) * Real.pi * R ^ 5 := by
-      aesop;
-      · convert integral_closedBall_norm_sq_three R ( by positivity ) using 1 ; norm_num [ EuclideanSpace.norm_eq ] ; ring;
+    have h_integrals : ∫ x in Metric.closedBall (0 : Space 3) R, ∑ j : Fin 3, x j ^ 2 =
+          (4 / 5) * Real.pi * R ^ 5 ∧
+        ∫ x in Metric.closedBall (0 : Space 3) R, x i ^ 2 =
+          (1 / 3) * (4 / 5) * Real.pi * R ^ 5 := by
+      subst h
+      simp_all only [one_div]
+      apply And.intro
+      · convert integral_closedBall_norm_sq_three R ( by positivity ) using 1
+        norm_num [ EuclideanSpace.norm_eq ]
+        ring_nf
         exact MeasureTheory.setIntegral_congr_fun measurableSet_closedBall fun x hx => by rw [ Real.sq_sqrt ( Finset.sum_nonneg fun _ _ => sq_nonneg _ ) ] ;
-      · have := integral_closedBall_coord_sq_eq_div_three ( R : ℝ ) i; norm_num [ integral_closedBall_norm_sq_three ] at * ; linarith;
+      · have := integral_closedBall_coord_sq_eq_div_three ( R : ℝ ) i
+        norm_num [ integral_closedBall_norm_sq_three ] at *
+        linarith
     rw [ MeasureTheory.integral_sub ] <;> aesop;
     · simp_all +decide [ ← sq ];
       erw [ MeasureTheory.measureReal_def ] ; norm_num [ volume_closedBall_three ] ; ring;
@@ -260,7 +278,7 @@ lemma solidSphere_inertiaTensor (m R : ℝ≥0) (hr : R ≠ 0) :
     · exact ( by contrapose! left; rw [ MeasureTheory.integral_undef left ] ; positivity );
     · ring_nf;
       exact ( by contrapose! right; rw [ MeasureTheory.integral_undef right ] ; positivity );
-  · rw [ MeasureTheory.integral_neg ] ; aesop;
+  · simp [h, integral_neg]
     exact Or.inr <| integral_closedBall_coord_mul_coord_eq_zero R i j h
 
 end RigidBody
